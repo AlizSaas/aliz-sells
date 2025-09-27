@@ -28,6 +28,11 @@ import { CollapsibleContent } from '@radix-ui/react-collapsible';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { reOrderChapters, reOrderLessons } from '../action';
+import NewChapterModal from './new-chapter-model';
+import NewLessonModal from './new-lesson-model';
+import DeleteLesson from './delete-lesson';
+import DeleteChapter from './delete-chapter';
+
 
 interface CourseStructureProps {
   data: AdminCourseSingularType
@@ -45,12 +50,12 @@ interface SortableItemProps {
 export default function CourseStructure({data}:CourseStructureProps) {
 
   const initialItems = data.chapter.map((chapter) => ({
-    id: chapter.id,
+    id: chapter.id, // unique id for DnD
     title: chapter.title,
     order: chapter.position,
     isOpen: true, // default to expanded,
     lessons: chapter.lessons.map((lesson) => ({
-      id: lesson.id,
+      id: lesson.id, // unique id for DnD
       title: lesson.title,
       order: lesson.position,
   
@@ -295,10 +300,14 @@ return
 
     >
      <Card className=''>
-        <CardHeader className='flex flex-row items-center justify-between border-b border-border'>
+        <CardHeader
+        
+        className='flex flex-row items-center justify-between border-b border-border'>
             <CardTitle>
                 Chapters
             </CardTitle>
+
+            <NewChapterModal courseId={data.id} />
 
         </CardHeader>
         <CardContent className='space-y-8'>
@@ -333,9 +342,10 @@ return
                        </p>
                         </div>
 
-                        <Button variant={'outline'} size={'icon'}>
-                          <Trash2Icon className='size-4'/>
-                        </Button>
+                     <DeleteChapter
+                       chapterId={item.id}
+                       courseId={data.id}
+                     />
 
                       </div>
 
@@ -362,9 +372,15 @@ return
                                       </Link>
 
                                     </div>
-                                    <Button variant={'outline'} size={'icon'}>
-                                      <Trash2Icon className='size-4'/>
-                                    </Button>
+                                
+                                  <DeleteLesson 
+                                  chapterId={item.id}
+
+                                  lessonId={lesson.id}
+                                  courseId={data.id}
+                                  
+                                  />
+                                   
 
 
                                   </div>
@@ -379,10 +395,8 @@ return
 
                         </SortableContext>
 
-                        <div className='p-2'>
-                          <Button className='w-full' variant={'outline'} >
-                            Create New Lesson
-                          </Button>
+                        <div className='p-2 '>
+                         <NewLessonModal courseId={data.id} chapterId={item.id} />
 
                         </div>
 
