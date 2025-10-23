@@ -25,17 +25,16 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import RichTextEditor from "@/components/rich-text-editor/editor"
 import FileUploader from "@/components/file-uploader/file-uploader"
-import { useTransition } from "react"
-import { tryCatch } from "@/hooks/try-catch"
+
 
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
-import { AdminCourseSingularType } from '@/data/admin/admin-get-course';
-import { editCourse } from "../action"
+
+import { CourseDataType, useEditCourse } from "@/data/admin/hooks/use-admin"
 
 
-export default function EditCourseForm({data}:{data:AdminCourseSingularType}) {
-      const [isPending, startTransition] = useTransition();
+export default function EditCourseForm({data}:{data:CourseDataType}) {
+   const editCourse = useEditCourse()
       const router = useRouter()
       const form = useForm<CourseSchemaType>({
         resolver: zodResolver(courseSchema),
@@ -54,24 +53,20 @@ export default function EditCourseForm({data}:{data:AdminCourseSingularType}) {
         },
       });
        function onSubmit(values: CourseSchemaType) {
-         startTransition(async () => {
-           const {data:result,error} = await tryCatch(editCourse(values,data.id))
-           if(error) {
-             toast.error('Something went wrong. Please try again.')
-             return;
-           }
-     
-           if(result.status === 'success' ) {
-             toast.success(result.message)
-             form.reset();
-             router.push('/admin/courses')
-             
-     
-           }
-           else if (result.status === 'error') {
-             toast.error(result.message)
-           }
-         })
+        editCourse.mutate(
+          {
+            courseId: data.id,
+            ...values
+          },
+          {
+            onSuccess:() => {
+           
+              router.push('/admin/courses')
+            }
+          }
+        )
+
+         
      
        }
   return (
@@ -150,6 +145,7 @@ export default function EditCourseForm({data}:{data:AdminCourseSingularType}) {
                   <FormLabel>Thumbnail image</FormLabel>
                   <FormControl>
                     <FileUploader
+                    fileTypeAccepted="image"
                     value={field.value}
                     onChange={field.onChange}
                     />
@@ -283,10 +279,10 @@ export default function EditCourseForm({data}:{data:AdminCourseSingularType}) {
                 
                 />
                 <Button
-                disabled={isPending}
+                disabled={editCourse.isPending}
                 type="submit">
                   {
-                    isPending ?<> Updating... <Loader2 className="animate-spin"/> </> : <>  Update Course <PlusIcon className="ml-2 size-4"/> </>
+                    editCourse.isPending ?<> Updating... <Loader2 className="animate-spin"/> </> : <>  Update Course <PlusIcon className="ml-2 size-4"/> </>
                   }
                 </Button>
 

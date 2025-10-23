@@ -7,8 +7,8 @@ import {v4 as uuidv4} from 'uuid'
 import {getSignedUrl} from '@aws-sdk/s3-request-presigner'
 import { s3 } from "@/lib/s3Client";
 import arcjet from "@/lib/arcjet";
-import { detectBot, fixedWindow } from "@arcjet/next";
-import { getServerSession } from "@/lib/get-session";
+import {  fixedWindow } from "@arcjet/next";
+
 import { requireAdmin } from "@/data/admin/require-admin";
 
 
@@ -23,17 +23,11 @@ import { requireAdmin } from "@/data/admin/require-admin";
 })
 
 const aj = arcjet.withRule(
-    detectBot({
-        mode:'LIVE',
-        allow:[],
-
-    })
-).withRule(
-    fixedWindow({
-        mode:'LIVE',
-        window:'1m', // 1 minute
-        max:5 // max 5 requests per minute
-    })
+        fixedWindow({
+            mode:'LIVE',
+            window:'1m', // 1 minute
+            max:5 // max 5 requests per minute
+        })
 )
 
 export async function POST(request: Request) {

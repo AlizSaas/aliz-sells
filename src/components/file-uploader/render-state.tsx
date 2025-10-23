@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils'
-import { CloudUploadIcon, ImageIcon } from 'lucide-react'
+import { CloudUploadIcon, ImageIcon, Loader2, Trash2 } from 'lucide-react'
 import React from 'react'
 import { Button } from '../ui/button'
+import Image from 'next/image'
 
 export function RenderEmptyState({isDragActive}:{isDragActive:boolean}) {
   return (
@@ -38,4 +39,22 @@ export function RenderErrorState() {
 
 }
 
+export function RenderUploadedState({previewUrl,isDeleting,handleRemoveFile,fileType}:{previewUrl:string,isDeleting:boolean,handleRemoveFile:()=>void,fileType:'image'|'video'}) {
+    return <div className='relative group w-full h-full flex items-center justify-center'>
+        {
+            fileType === 'video' ? <video className='w-full h-full rounded-md object-cover' src={previewUrl} controls/> :<Image src={previewUrl} alt=' uploaded file preview'fill className='object-contain p-2'/>
+        }
+        <Button
+        onClick={handleRemoveFile}
+        disabled={isDeleting}
+        size={'sm'}
+        variant={'destructive'}
+        className={cn('absolute top-4 right-4')}>
+            {
+isDeleting ? <Loader2 className='size-4 animate-spin'/> : <Trash2 className='size-4'/>
+            }
 
+        </Button>
+    </div>
+
+}

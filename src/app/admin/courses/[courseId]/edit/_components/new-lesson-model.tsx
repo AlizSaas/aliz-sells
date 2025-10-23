@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useTransition } from 'react'
+import React, { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -16,12 +16,13 @@ import {  lessonSchema, LessonSchemaType } from '@/lib/zodSchema'
 import { useForm } from 'react-hook-form'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { tryCatch } from '@/hooks/try-catch'
-import {  createLesson } from '../action'
+
+
 import { toast } from 'sonner'
+import { useCreateLesson } from '@/data/admin/hooks/use-admin'
 export default function NewLessonModal({courseId,chapterId}:{courseId:string,chapterId:string}) {
     const [isOpen, setOpen] = useState(false)
-    const [isPending, startTransition] = useTransition()
+ const createLesson  = useCreateLesson()
 
        const form = useForm<LessonSchemaType>({
             resolver: zodResolver(lessonSchema),
@@ -35,24 +36,14 @@ export default function NewLessonModal({courseId,chapterId}:{courseId:string,cha
           });
 
           async function onSubmit(values: LessonSchemaType) {
-          startTransition(async () =>{
-   const {data:result,error } = await tryCatch(createLesson(values))
-   if(error) {
-    toast.error('Something went wrong')
-    return
-   }
-
-   if(result.status === 'success') {
-    toast.success(result.message)
-    form.reset()
-    setOpen(false)
-    
-   } else if(result.status === 'error' ) {
-    toast.error(result.message)
-   }
-
-   
-          })
+        createLesson.mutate(values, {
+            onSuccess: (data) => {
+                
+                setOpen(false)
+                form.reset()
+            }
+        })
+        
           }
     function handleOpenChange(open: boolean) {
         if(!open) {
@@ -100,10 +91,10 @@ export default function NewLessonModal({courseId,chapterId}:{courseId:string,cha
 
                 <DialogFooter>
                     <Button 
-                    disabled={isPending}
+                    disabled={createLesson.isPending}
                     type='submit'>
                         {
-                            isPending ? 'Creating...' : 'Create Lesson'
+                            createLesson.isPending ? 'Creating...' : 'Create Lesson'
                         }
                         
 
