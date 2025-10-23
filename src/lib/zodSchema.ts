@@ -48,7 +48,7 @@ courseId:z.string().uuid({message:"Invalid course ID"}),
 
 })
 export const lessonSchema = z.object({
-  name: z.string().min(3, {message:"Chapter name should be at least 3 characters long"}).max(100, "Chapter name should be at most 100 characters long"),
+  name: z.string().min(3, {message:"Chapter name should be at least 3 characters long"}).max(300, "Chapter name should be at most 300 characters long"),
   courseId:z.string().uuid({message:"Invalid course ID"}),
   chapterId:z.string().uuid({message:"Invalid chapter ID"}),
   description: z.string().min(3).optional(),
@@ -59,3 +59,4 @@ export const lessonSchema = z.object({
 export type CourseSchemaType = z.infer<typeof courseSchema>;
 export type ChapterSchemaType = z.infer<typeof chapterSchema>;
 export type LessonSchemaType = z.infer<typeof lessonSchema>;
+

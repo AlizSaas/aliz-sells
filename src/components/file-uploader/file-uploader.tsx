@@ -3,12 +3,10 @@ import React,{useCallback, useEffect, useState} from 'react'
 import {FileRejection, useDropzone} from 'react-dropzone'
 import { Card, CardContent } from '../ui/card';
 import { cn } from '@/lib/utils';
-import {RenderEmptyState,RenderErrorState} from './render-state';
+import {RenderEmptyState,RenderErrorState,RenderUploadedState} from './render-state';
 import { toast } from 'sonner';
 import {v4 as uuid} from 'uuid'
-import Image from 'next/image';
-import { Button } from '../ui/button';
-import { Loader2, Trash2, XIcon } from 'lucide-react';
+
 import { Progress } from '../ui/progress';
 import { useConstructUrl } from '@/hooks/use-construct-url';
 
@@ -26,9 +24,10 @@ interface FileUploaderProps {
 interface UploadFormDataProps {
     value?: string,
     onChange?:(value:string) => void,
+    fileTypeAccepted: 'image' | 'video',
 }
 
-export default function FileUploader({onChange,value}:UploadFormDataProps) {
+export default function FileUploader({onChange,value,fileTypeAccepted}:UploadFormDataProps) {
     const fileUrl = useConstructUrl(value || '');
 const [fileState, setFileState] = useState<FileUploaderProps>({
     id: null,
@@ -39,11 +38,11 @@ const [fileState, setFileState] = useState<FileUploaderProps>({
     key: value,
 
     isDeleting: false,
-    objectUrl: fileUrl,
+    objectUrl: value ? fileUrl : undefined,
 
-    fileType:'image',
+    fileType: fileTypeAccepted,
 });
-async function uploadFile(file:File) {
+const uploadFile = useCallback(  async (file:File) => {
     setFileState((prev) => ({
         ...prev,
         uploading:true,
@@ -60,7 +59,7 @@ async function uploadFile(file:File) {
                 fileName:file.name,
                 contentType:file.type,
                 size:file.size,
-                isImage: true
+                isImage: fileTypeAccepted === 'image' ? true : false,
             }) // our api will use this to get presigned url from s3 
         })
         if(!presignedResponse.ok) {
@@ -130,8 +129,7 @@ async function uploadFile(file:File) {
                 uploading:false,
         }))
     }
-
-}
+},[onChange,fileTypeAccepted]) // dependencies
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
         if(acceptedFiles.length > 0) {
@@ -155,7 +153,7 @@ async function uploadFile(file:File) {
                 
              
                 isDeleting:false,
-                fileType: 'image',
+                fileType: fileTypeAccepted,
             })
 
             uploadFile(file);
@@ -165,7 +163,7 @@ async function uploadFile(file:File) {
 
 
         
-  }, [fileState.objectUrl])
+  }, [fileState.objectUrl,fileTypeAccepted,uploadFile]) // dependencies
 
 
 async function handleRemoveFile() {
@@ -207,7 +205,7 @@ async function handleRemoveFile() {
             
             isDeleting:false,
             key:undefined,
-            fileType:'image',
+            fileType: fileTypeAccepted,
         }))
            
         toast.success('File deleted successfully')
@@ -221,6 +219,7 @@ async function handleRemoveFile() {
             isDeleting:false,
             error:true,
         }) )
+        console.error(error)
         
     }
     
@@ -250,7 +249,9 @@ async function handleRemoveFile() {
     }
     if(fileState.objectUrl){
         return (
-            <RenderUploadedState previewUrl={fileState.objectUrl} isDeleting={fileState.isDeleting} handleRemoveFile={handleRemoveFile}/>
+            <RenderUploadedState
+            fileType={fileState.fileType}
+            previewUrl={fileState.objectUrl} isDeleting={fileState.isDeleting} handleRemoveFile={handleRemoveFile}/>
         )
     }
 
@@ -270,12 +271,16 @@ async function handleRemoveFile() {
   },[fileState.objectUrl])
   const {getRootProps, getInputProps, isDragActive} = useDropzone({
         onDrop,
-        accept:{
-            'image/*':[]
-
+        accept: fileTypeAccepted === 'image' ? {
+            'image/*': []
+        } : {
+            'video/*': []
         },
+        
         maxFiles:1,
-        multiple:false,maxSize:5 * 1024 * 1024, // 5mb
+        multiple:false,
+        
+        maxSize: fileTypeAccepted === 'image' ? 5 * 1024 * 1024 : 50 * 1024 * 1024, // 5MB for image and 50MB for video
         onDropRejected: rejectedFile,
         disabled: fileState.uploading || !!fileState.objectUrl, // disable when uploading or deleting
 
@@ -304,23 +309,7 @@ async function handleRemoveFile() {
 }
 
 
-export function RenderUploadedState({previewUrl,isDeleting,handleRemoveFile}:{previewUrl:string,isDeleting:boolean,handleRemoveFile:()=>void}) {
-    return <div>
-        <Image src={previewUrl} alt=' uploaded file preview'fill className='object-contain p-2'/>
-        <Button
-        onClick={handleRemoveFile}
-        disabled={isDeleting}
-        size={'sm'}
-        variant={'destructive'}
-        className={cn('absolute top-4 right-4')}>
-            {
-isDeleting ? <Loader2 className='size-4 animate-spin'/> : <Trash2 className='size-4'/>
-            }
 
-        </Button>
-    </div>
-
-}
 export function RenderUploadingState({progress,file}:{progress:number,file:File}) {
     return (
     <div className='text-center flex justify-center items-center flex-col'>

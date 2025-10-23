@@ -1,39 +1,22 @@
 'use client'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
-import { tryCatch } from '@/hooks/try-catch'
+
 import { Trash2 } from 'lucide-react'
-import React, { useState, useTransition } from 'react'
-import { deleteLesson } from '../action'
-import { toast } from 'sonner'
+import React, { useState } from 'react'
+
+
+import { useDeleteLesson } from '@/data/admin/hooks/use-admin'
 
 export default function DeleteLesson({chapterId, lessonId, courseId}:{chapterId:string, lessonId:string, courseId:string}) {
     const [open, setOpen] = useState(false)
-    const [isPending, startTransition] = useTransition()
+   const deleteLesson = useDeleteLesson()
 
-    async function onSubmit () {
-        startTransition(async () => {
-            const {data:result,error} = await tryCatch(deleteLesson(lessonId,chapterId,courseId))
+     function onSubmit () {
+        deleteLesson.mutate({lessonId,chapterId,courseId})
+        setOpen(false)
 
- if(error) {
-    toast.error('Something went wrong')
-    return
-   }
-
-   if(result.status === 'success') {
-    toast.success(result.message)
-
-    setOpen(false)
-    
-   } else if(result.status === 'error' ) {
-    toast.error(result.message)
-   }
-
-
-
-
-            
-        })
+     
         
         
     }
@@ -62,11 +45,11 @@ export default function DeleteLesson({chapterId, lessonId, courseId}:{chapterId:
             Cancel
            </AlertDialogCancel>
            <Button
-           disabled={isPending}
+           disabled={deleteLesson.isPending}
            onClick={onSubmit}
            >
    {
-    isPending ? 'Deleting...' : 'Delete'
+    deleteLesson.isPending ? 'Deleting...' : 'Delete'
    }
            </Button>
 
